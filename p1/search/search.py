@@ -86,61 +86,61 @@ def depthFirstSearch(problem: SearchProblem):
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    fringe = util.Stack()
-    start = problem.getStartState()
-    fringe.push((start, []))
-    visited = set()
+    st = util.Stack()
+    s0 = problem.getStartState()
+    st.push((s0, []))
+    vis = set()
 
-    def push_successors(state, path):
-        for succ, action, cost in problem.getSuccessors(state):
-            if succ not in visited:
-                fringe.push((succ, path + [action]))
+    def push_succ(s, p):
+        for ns, a, c in problem.getSuccessors(s):
+            if ns not in vis:
+                st.push((ns, p + [a]))
 
-    while not fringe.isEmpty():
-        state, path = fringe.pop()
-        if problem.isGoalState(state):
-            return path
-        if state in visited:
+    while not st.isEmpty():
+        s, p = st.pop()
+        if problem.isGoalState(s):
+            return p
+        if s in vis:
             continue
-        visited.add(state)
-        push_successors(state, path)
+        vis.add(s)
+        push_succ(s, p)
     return []
 
 def breadthFirstSearch(problem: SearchProblem):
     """Search the shallowest nodes in the search tree first."""
-    fringe = util.Queue()
-    start = problem.getStartState()
-    fringe.push((start, []))
-    visited = set([start])
+    q = util.Queue()
+    s0 = problem.getStartState()
+    q.push((s0, []))
+    vis = set([s0])
 
-    while not fringe.isEmpty():
-        state, path = fringe.pop()
-        if problem.isGoalState(state):
-            return path
-        for succ, action, cost in problem.getSuccessors(state):
-            if succ not in visited:
-                visited.add(succ)
-                fringe.push((succ, path + [action]))
+    while not q.isEmpty():
+        s, p = q.pop()
+        if problem.isGoalState(s):
+            return p
+        for ns, a, c in problem.getSuccessors(s):
+            if ns not in vis:
+                vis.add(ns)
+                q.push((ns, p + [a]))
     return []
 
 def uniformCostSearch(problem: SearchProblem):
     """Search the node of least total cost first."""
-    fringe = util.PriorityQueue()
-    start = problem.getStartState()
-    fringe.push((start, [], 0), 0)
-    visited = set()
+    pq = util.PriorityQueue()
+    s0 = problem.getStartState()
+    pq.push((s0, [], 0), 0)
+    vis = set()
 
-    while not fringe.isEmpty():
-        state, path, cost = fringe.pop()
-        if state in visited:
+    while not pq.isEmpty():
+        s, p, g = pq.pop()
+        if s in vis:
             continue
-        if problem.isGoalState(state):
-            return path
-        visited.add(state)
-        for succ, action, stepCost in problem.getSuccessors(state):
-            if succ not in visited:
-                newCost = cost + stepCost
-                fringe.push((succ, path + [action], newCost), newCost)
+        if problem.isGoalState(s):
+            return p
+        vis.add(s)
+        for ns, a, w in problem.getSuccessors(s):
+            if ns not in vis:
+                ng = g + w
+                pq.push((ns, p + [a], ng), ng)
     return []
 
 def nullHeuristic(state, problem=None):
@@ -152,23 +152,23 @@ def nullHeuristic(state, problem=None):
 
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    fringe = util.PriorityQueue()
-    start = problem.getStartState()
-    fringe.push((start, [], 0), heuristic(start, problem))
-    visited = set()
+    pq = util.PriorityQueue()
+    s0 = problem.getStartState()
+    pq.push((s0, [], 0), heuristic(s0, problem))
+    vis = set()
 
-    while not fringe.isEmpty():
-        state, path, cost = fringe.pop()
-        if state in visited:
+    while not pq.isEmpty():
+        s, p, g = pq.pop()
+        if s in vis:
             continue
-        if problem.isGoalState(state):
-            return path
-        visited.add(state)
-        for succ, action, stepCost in problem.getSuccessors(state):
-            if succ not in visited:
-                newCost = cost + stepCost
-                priority = newCost + heuristic(succ, problem)
-                fringe.push((succ, path + [action], newCost), priority)
+        if problem.isGoalState(s):
+            return p
+        vis.add(s)
+        for ns, a, w in problem.getSuccessors(s):
+            if ns not in vis:
+                ng = g + w
+                f = ng + heuristic(ns, problem)
+                pq.push((ns, p + [a], ng), f)
     return []
 
 
