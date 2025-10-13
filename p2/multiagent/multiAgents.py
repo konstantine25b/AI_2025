@@ -218,8 +218,59 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        def val(st, d, a, al, be):
+            if d == self.depth or st.isWin() or st.isLose():
+                return self.evaluationFunction(st)
+            if a == 0:
+                return mx(st, d, al, be)
+            return mn(st, d, a, al, be)
+
+        def mx(st, d, al, be):
+            v = float('-inf')
+            acts = st.getLegalActions(0)
+            if not acts:
+                return self.evaluationFunction(st)
+            for ac in acts:
+                ns = st.generateSuccessor(0, ac)
+                v = max(v, val(ns, d, 1, al, be))
+                if v > be:
+                    return v
+                if v > al:
+                    al = v
+            return v
+
+        def mn(st, d, a, al, be):
+            v = float('inf')
+            acts = st.getLegalActions(a)
+            if not acts:
+                return self.evaluationFunction(st)
+            na = a + 1
+            nd = d
+            if na == st.getNumAgents():
+                na = 0
+                nd = d + 1
+            for ac in acts:
+                ns = st.generateSuccessor(a, ac)
+                v = min(v, val(ns, nd, na, al, be))
+                if v < al:
+                    return v
+                if v < be:
+                    be = v
+            return v
+
+        al = float('-inf')
+        be = float('inf')
+        best = float('-inf')
+        act = Directions.STOP
+        for ac in gameState.getLegalActions(0):
+            ns = gameState.generateSuccessor(0, ac)
+            v = val(ns, 0, 1, al, be)
+            if v > best:
+                best = v
+                act = ac
+            if best > al:
+                al = best
+        return act
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
