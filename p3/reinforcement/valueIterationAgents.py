@@ -61,7 +61,26 @@ class ValueIterationAgent(ValueEstimationAgent):
 
     def runValueIteration(self):
         # Write value iteration code here
-        "*** YOUR CODE HERE ***"
+        states = self.mdp.getStates()
+        for _ in range(self.iterations):
+            newValues = util.Counter()
+            for state in states:
+                if self.mdp.isTerminal(state):
+                    newValues[state] = 0
+                    continue
+                actions = self.mdp.getPossibleActions(state)
+                if not actions:
+                    newValues[state] = 0
+                    continue
+                qValues = []
+                for action in actions:
+                    q = 0
+                    for nextState, prob in self.mdp.getTransitionStatesAndProbs(state, action):
+                        reward = self.mdp.getReward(state, action, nextState)
+                        q += prob * (reward + self.discount * self.values[nextState])
+                    qValues.append(q)
+                newValues[state] = max(qValues) if qValues else 0
+            self.values = newValues
 
 
     def getValue(self, state):
@@ -76,8 +95,13 @@ class ValueIterationAgent(ValueEstimationAgent):
           Compute the Q-value of action in state from the
           value function stored in self.values.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if self.mdp.isTerminal(state):
+            return 0
+        q = 0
+        for nextState, prob in self.mdp.getTransitionStatesAndProbs(state, action):
+            reward = self.mdp.getReward(state, action, nextState)
+            q += prob * (reward + self.discount * self.values[nextState])
+        return q
 
     def computeActionFromValues(self, state):
         """
@@ -88,8 +112,19 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if self.mdp.isTerminal(state):
+            return None
+        actions = self.mdp.getPossibleActions(state)
+        if not actions:
+            return None
+        bestAction = None
+        bestQ = float('-inf')
+        for action in actions:
+            q = self.computeQValueFromValues(state, action)
+            if q > bestQ:
+                bestQ = q
+                bestAction = action
+        return bestAction
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
@@ -120,5 +155,51 @@ class PrioritizedSweepingValueIterationAgent(ValueIterationAgent):
         ValueIterationAgent.__init__(self, mdp, discount, iterations)
 
     def runValueIteration(self):
-        "*** YOUR CODE HERE ***"
+        """
+        Simplified Prioritized Sweeping Value Iteration.
+        """
+        states = self.mdp.getStates()
+
+        predecessors = {}
+        for s in states:
+            predecessors[s] = set()
+        for s in states:
+            actions = self.mdp.getPossibleActions(s)
+            for a in actions:
+                for nextState, prob in self.mdp.getTransitionStatesAndProbs(s, a):
+                    if prob > 0:
+                        predecessors[nextState].add(s)
+
+        pq = util.PriorityQueue()
+
+        for s in states:
+            if self.mdp.isTerminal(s):
+                continue
+            actions = self.mdp.getPossibleActions(s)
+            if not actions:
+                continue
+
+            maxQ = max(self.computeQValueFromValues(s, a) for a in actions)
+            diff = abs(self.values[s] - maxQ)
+            pq.push(s, -diff)
+
+        for _ in range(self.iterations):
+            if pq.isEmpty():
+                break
+            s = pq.pop()
+            if not self.mdp.isTerminal(s):
+                actions = self.mdp.getPossibleActions(s)
+                if actions:
+                    self.values[s] = max(self.computeQValueFromValues(s, a) for a in actions)
+
+            for p in predecessors.get(s, []):
+                if self.mdp.isTerminal(p):
+                    continue
+                actionsP = self.mdp.getPossibleActions(p)
+                if not actionsP:
+                    continue
+                maxQp = max(self.computeQValueFromValues(p, a) for a in actionsP)
+                diff = abs(self.values[p] - maxQp)
+                if diff > self.theta:
+                    pq.update(p, -diff)
 
