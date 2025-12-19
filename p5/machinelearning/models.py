@@ -174,8 +174,11 @@ class LanguageIDModel(Module):
         super(LanguageIDModel, self).__init__()
         "*** YOUR CODE HERE ***"
         # Initialize your model parameters here
-
-
+        self.d = 200 
+        self.initial_w = Linear(self.num_chars, self.d)
+        self.hidden_w = Linear(self.d, self.d)
+        
+        self.output_layer = Linear(self.d, len(self.languages))
 
     def forward(self, xs):
         """
@@ -207,6 +210,14 @@ class LanguageIDModel(Module):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+       
+        h = relu(self.initial_w(xs[0]))
+        
+        for i in range(1, len(xs)):
+            z = self.initial_w(xs[i]) + self.hidden_w(h)
+            h = relu(z)
+            
+        return self.output_layer(h)
 
 
 
