@@ -130,7 +130,9 @@ class DigitClassificationModel(Module):
         input_size = 28 * 28
         output_size = 10
         "*** YOUR CODE HERE ***"
-
+        self.layer1 = Linear(input_size, 200)
+        self.layer2 = Linear(200, 100)
+        self.layer3 = Linear(100, output_size)
 
     def forward(self, x):
         """
@@ -147,6 +149,9 @@ class DigitClassificationModel(Module):
                 (also called logits)
         """
         """ YOUR CODE HERE """
+        x = relu(self.layer1(x))
+        x = relu(self.layer2(x))
+        return self.layer3(x)
 
 
 
