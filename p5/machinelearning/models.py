@@ -241,7 +241,14 @@ def Convolve(input: tensor, weight: tensor):
     weight_dimensions = weight.shape
     Output_Tensor = tensor(())
     "*** YOUR CODE HERE ***"
-
+    rows = input_tensor_dimensions[0] - weight_dimensions[0] + 1
+    cols = input_tensor_dimensions[1] - weight_dimensions[1] + 1
+    Output_Tensor = zeros((rows, cols))
+    
+    for i in range(rows):
+        for j in range(cols):
+            sub_tensor = input[i:i+weight_dimensions[0], j:j+weight_dimensions[1]]
+            Output_Tensor[i, j] = (sub_tensor * weight).sum()
     "*** End Code ***"
     return Output_Tensor
 
@@ -265,7 +272,8 @@ class DigitConvolutionalModel(Module):
 
         self.convolution_weights = Parameter(ones((3, 3)))
         """ YOUR CODE HERE """
-
+        self.layer1 = Linear(26*26, 64)
+        self.layer2 = Linear(64, 10)
 
     def forward(self, x):
         """
@@ -278,6 +286,8 @@ class DigitConvolutionalModel(Module):
         )
         x = x.flatten(start_dim=1)
         """ YOUR CODE HERE """
+        x = relu(self.layer1(x))
+        return self.layer2(x)
 
 
 class Attention(Module):
@@ -317,4 +327,25 @@ class Attention(Module):
         B, T, C = input.size()
 
         """YOUR CODE HERE"""
+        # Calculate Q, K, V
+        Q = self.q_layer(input)
+        K = self.k_layer(input)
+        V = self.v_layer(input)
+
+        # Scaled Dot-Product Attention
+        # (Q * K^T) / sqrt(d_k)
+        # We need to swap the last two dimensions of K to transpose it
+        # K has shape (B, T, C), we want (B, C, T) for the multiplication to result in (B, T, T)
+        scores = matmul(Q, K.transpose(-2, -1)) / (self.layer_size ** 0.5)
+
+        # Apply causal mask
+        scores = scores.masked_fill(self.mask[:, :, :T, :T] == 0, float('-inf'))
+
+        # Apply softmax to get attention weights
+        attention_weights = softmax(scores, dim=-1)
+
+        # Multiply by V
+        output = matmul(attention_weights, V)
+        
+        return output
 
